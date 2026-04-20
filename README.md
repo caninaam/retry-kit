@@ -1,93 +1,221 @@
-# retrykit
+# RetryKit
 
+Lightweight Java 17 retry & circuit breaker library.  
+Zero dependencies · Fluent API · Pipeline DSL · YAML config with hot reload · JAR < 50 KB
 
+---
 
-## Getting started
+## Why RetryKit?
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+| Feature | RetryKit | Resilience4j |
+|---|---|---|
+| Dependencies | **0** | ~10 |
+| JAR size | **< 50 KB** | ~500 KB |
+| Pipeline DSL | **yes** | no |
+| YAML hot reload | **yes** | no |
+| Learning curve | **5 min** | 30 min+ |
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+---
 
-## Add your files
+## Quick start
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+```xml
+<dependency>
+  <groupId>io.retrykit</groupId>
+  <artifactId>retrykit</artifactId>
+  <version>0.1.1-SNAPSHOT</version>
+</dependency>
+```
+
+```java
+String result = RetryKit.<String>retry()
+    .maxAttempts(3)
+    .waitDuration(Duration.ofSeconds(1))
+    .fallback(ctx -> "default")
+    .call(() -> myService.call());
+```
+
+---
+
+## Features
+
+### Retry strategies
+
+```java
+// Fixed delay
+RetryKit.<String>retry()
+    .maxAttempts(3)
+    .waitDuration(Duration.ofSeconds(1))
+    .call(() -> myService.call());
+
+// Exponential backoff
+RetryKit.<String>retry()
+    .maxAttempts(4)
+    .exponentialBackoff(Duration.ofSeconds(1), 2.0, Duration.ofSeconds(10))
+    .call(() -> myService.call());
+
+// With jitter (avoids thundering herd)
+RetryKit.<String>retry()
+    .maxAttempts(3)
+    .exponentialBackoff(Duration.ofMillis(500), 2.0)
+    .withJitter(0.2)
+    .call(() -> myService.call());
+
+// Max total duration
+RetryKit.<String>retry()
+    .maxAttempts(10)
+    .waitDuration(Duration.ofSeconds(2))
+    .maxDuration(Duration.ofSeconds(5))
+    .call(() -> myService.call());
+
+// Retry only on specific exceptions
+RetryKit.<String>retry()
+    .maxAttempts(3)
+    .retryOn(IOException.class, HttpServerErrorException.class)
+    .call(() -> myService.call());
+
+// Retry on result predicate
+RetryKit.<String>retry()
+    .maxAttempts(4)
+    .retryIf(result -> "retry-me".equals(result))
+    .call(() -> myService.call());
+```
+
+### Circuit Breaker
+
+```java
+// RETRY_FIRST: retry → then check CB
+RetryKit.<String>retry()
+    .mode(WorkflowMode.RETRY_FIRST)
+    .maxAttempts(3)
+    .waitDuration(Duration.ofSeconds(1))
+    .circuitBreaker(cb -> cb
+        .failureRateThreshold(50)       // open if 50%+ failures
+        .minimumNumberOfCalls(5)        // need 5 calls before evaluating
+        .waitDurationInOpenState(Duration.ofMinutes(1))
+        .permittedCallsInHalfOpen(2))
+    .fallback(ctx -> "fallback")
+    .build();
+
+// CB_FIRST: check CB → then retry
+RetryKit.<String>retry()
+    .mode(WorkflowMode.CB_FIRST)
+    ...
+```
+
+### Pipeline DSL
+
+Compose steps in order — leftmost = outermost wrapper:
+
+```java
+RetryKit.<String>retry()
+    .pipeline("TIMEOUT(3s) > RETRY(3) > CB(50%)")
+    .call(() -> myService.call());
+```
+
+Full DSL syntax:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/caninaam/retrykit.git
-git branch -M main
-git push -uf origin main
+TIMEOUT(5s)
+RETRY(3)
+RETRY(maxAttempts:5, waitDuration:500ms)
+RETRY(maxAttempts:4, waitDuration:1s, backoff:2.0, maxWait:10s, jitter:0.2)
+CB(50%)
+CB(failureRate:50%, minCalls:5, wait:1m, halfOpen:2, timeout:2s)
 ```
 
-## Integrate with your tools
+### YAML config
 
-* [Set up project integrations](https://gitlab.com/caninaam/retrykit/-/settings/integrations)
+```yaml
+# retrykit.yaml
+default:
+  mode: RETRY_FIRST
+  maxAttempts: 3
+  waitDuration: PT1S
+  circuitBreaker:
+    failureRateThreshold: 50
+    minimumNumberOfCalls: 5
+    waitDurationInOpenState: PT1M
 
-## Collaborate with your team
+pipeline:
+  mode: PIPELINE
+  pipeline: "TIMEOUT(3s) > RETRY(3) > CB(50%)"
+```
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+```java
+RetryKit.<String>fromYaml("retrykit.yaml")
+    .profile("default")
+    .<String>as()
+    .fallback(ctx -> "fallback")
+    .build();
+```
 
-## Test and Deploy
+### Hot reload
 
-Use the built-in continuous integration in GitLab.
+Config reloads without restart — the YAML file must be **outside the JAR**:
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+```java
+RetryKit.<String>fromYaml("/etc/myapp/retrykit.yaml")
+    .profile("pipeline")
+    .<String>as()
+    .withHotReload(Duration.ofSeconds(5))   // checks every 5s
+    .fallback(ctx -> "fallback")
+    .build();
+```
 
-***
+### Async
 
-# Editing this README
+```java
+CompletableFuture<String> future = RetryKit.<String>retry()
+    .maxAttempts(3)
+    .callAsync(() -> myService.call());
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Labeled calls (for logging)
 
-## Suggestions for a good README
+```java
+kit.call(() -> myService.call(), "GET /orders");
+// logs: [RetryKit] [GET /orders] Attempt 1/3 FAILED
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
+## Exception semantics
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+| Exception | Meaning |
+|---|---|
+| `RetryException` | Service was called, all attempts failed |
+| `CircuitBreakerOpenException` | CB is OPEN — service not called at all |
+| Original exception | Non-retryable exception, propagated as-is |
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```java
+try {
+    kit.call(() -> myService.call());
+} catch (RetryException e) {
+    // e.attempts() = number of attempts made
+} catch (CircuitBreakerOpenException e) {
+    // service known to be down, not called
+}
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+---
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Observe circuit breaker state
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```java
+kit.circuitBreakerState(); // Optional<CircuitBreaker.State>
+// → CLOSED | OPEN | HALF_OPEN
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+---
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+## Requirements
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- Java 17+
+- No runtime dependencies
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+---
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+MIT
