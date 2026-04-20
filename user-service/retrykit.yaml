@@ -1,0 +1,74 @@
+retrykit:
+  logging:
+    enabled: true
+    level: DEBUG
+
+  profiles:
+
+    # ── 1. Basic — positional args ────────────────────────────────────────────
+    # TIMEOUT(Xs)  RETRY(N)  CB(N%)
+    pipeline:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(10s) > RETRY(6) > CB(50%)"
+
+    # ── 2. Named args — same result, more explicit ────────────────────────────
+    # TIMEOUT(duration:Xs)  RETRY(maxAttempts:N)  CB(failureRate:N%)
+    pipeline-named:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(duration:3s) > RETRY(maxAttempts:3) > CB(failureRate:50%)"
+
+    # ── 3. RETRY with fixed delay ─────────────────────────────────────────────
+    # waitDuration: pause between attempts
+    pipeline-fixed-delay:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(5s) > RETRY(maxAttempts:4, waitDuration:1s) > CB(50%)"
+
+    # ── 4. RETRY with exponential backoff (defaults: 1s initial, x2, max 60s) ─
+    pipeline-exponential:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(30s) > RETRY(maxAttempts:6, backoff:EXPONENTIAL) > CB(50%)"
+
+    # ── 5. RETRY with exponential backoff — all params explicit ──────────────
+    # initialDelay, multiplier, maxDelay
+    pipeline-exponential-full:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(15s) > RETRY(maxAttempts:5, backoff:EXPONENTIAL, initialDelay:500ms, multiplier:2.0, maxDelay:8s) > CB(50%)"
+
+    # ── 6. RETRY with jitter ──────────────────────────────────────────────────
+    # jitter:0.2 = adds up to 20% random noise to each delay
+    pipeline-jitter:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(10s) > RETRY(maxAttempts:3, backoff:EXPONENTIAL, initialDelay:1s, jitter:0.3) > CB(50%)"
+
+    # ── 7. CB with custom wait duration ──────────────────────────────────────
+    # wait: how long CB stays OPEN before going HALF_OPEN
+    pipeline-cb-wait:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(3s) > RETRY(3) > CB(failureRate:30%, wait:30s)"
+
+    # ── 8. CB with per-call timeout ───────────────────────────────────────────
+    # timeout: max duration for each individual call through the CB
+    pipeline-cb-timeout:
+      mode: PIPELINE
+      pipeline: "RETRY(3) > CB(failureRate:50%, wait:10s, timeout:2s)"
+
+    # ── 9. CIRCUIT_BREAKER — long alias for CB ────────────────────────────────
+    pipeline-cb-alias:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(3s) > RETRY(3) > CIRCUIT_BREAKER(failureRate:50%, wait:10s)"
+
+    # ── 10. Duration formats ──────────────────────────────────────────────────
+    # ms = milliseconds, s = seconds, m = minutes, m+s = combined
+    pipeline-durations:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(500ms) > RETRY(maxAttempts:3, waitDuration:200ms) > CB(50%, wait:1m)"
+
+    # ── 11. Retry only — no CB, no timeout ───────────────────────────────────
+    pipeline-retry-only:
+      mode: PIPELINE
+      pipeline: "RETRY(maxAttempts:5, waitDuration:1s)"
+
+    # ── 12. Timeout only ─────────────────────────────────────────────────────
+    pipeline-timeout-only:
+      mode: PIPELINE
+      pipeline: "TIMEOUT(2s)"
