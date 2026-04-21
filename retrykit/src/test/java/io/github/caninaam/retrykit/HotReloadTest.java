@@ -1,4 +1,4 @@
-package io.retrykit;
+package io.github.caninaam.retrykit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

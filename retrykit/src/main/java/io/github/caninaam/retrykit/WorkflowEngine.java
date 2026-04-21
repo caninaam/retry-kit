@@ -1,4 +1,4 @@
-package io.retrykit;
+package io.github.caninaam.retrykit;
 
 import java.time.Duration;
 import java.util.Optional;

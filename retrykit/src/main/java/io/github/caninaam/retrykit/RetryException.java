@@ -1,4 +1,4 @@
-package io.retrykit;
+package io.github.caninaam.retrykit;
 
 public class RetryException extends RuntimeException {
 

@@ -26,8 +26,8 @@ import org.springframework.web.client.RestTemplate;
 import com.example.demo.com.example.demo.dto.OrderDTO;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import io.retrykit.RetryKit;
-import io.retrykit.WorkflowMode;
+import io.github.caninaam.retrykit.RetryKit;
+import io.github.caninaam.retrykit.WorkflowMode;
 
 @SpringBootApplication
 @RestController

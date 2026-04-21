@@ -1,4 +1,4 @@
-package io.retrykit;
+package io.github.caninaam.retrykit;
 
 @FunctionalInterface
 public interface FallbackHandler<T> {

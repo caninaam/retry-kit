@@ -1,4 +1,4 @@
-package io.retrykit;
+package io.github.caninaam.retrykit;
 
 import java.util.function.Supplier;
 import java.util.logging.Level;

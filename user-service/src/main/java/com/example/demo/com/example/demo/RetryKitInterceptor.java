@@ -1,6 +1,6 @@
 package com.example.demo.com.example.demo;
 
-import io.retrykit.RetryKitContext;
+import io.github.caninaam.retrykit.RetryKitContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;

@@ -1,4 +1,4 @@
-package io.retrykit;
+package io.github.caninaam.retrykit;
 
 public class CircuitBreakerOpenException extends RuntimeException {
 
