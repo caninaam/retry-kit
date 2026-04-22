@@ -25,7 +25,9 @@ jobs:
 
       - name: Deploy to Maven Central
         working-directory: retrykit
-        run: ./mvnw clean deploy -DskipTests
+        run: |
+          chmod +x mvnw
+          ./mvnw clean deploy -DskipTests
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
