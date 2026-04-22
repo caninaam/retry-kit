@@ -21,9 +21,9 @@ Zero dependencies · Fluent API · Pipeline DSL · YAML config with hot reload �
 
 ```xml
 <dependency>
-  <groupId>io.retrykit</groupId>
+  <groupId>io.github.caninaam</groupId>
   <artifactId>retrykit</artifactId>
-  <version>0.1.1-SNAPSHOT</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
