@@ -216,6 +216,69 @@ kit.circuitBreakerState(); // Optional<CircuitBreaker.State>
 
 ---
 
+## Example projects
+
+This repository includes two Spring Boot services demonstrating RetryKit in a real microservice architecture:
+
+```
+retrykit/          ← the library
+user-service/      ← client (port 8081) — calls catalog-service with RetryKit retry/CB
+catalog-service/   ← server (port 8080) — serves orders, includes simulation endpoints
+```
+
+### Architecture
+
+```
+user-service (8081)  →  catalog-service (8080)  →  [pricing service - simulated]
+      ↑ RetryKit                                          ↑ RetryKit
+```
+
+### Run locally
+
+```bash
+# Terminal 1 — start catalog-service
+cd catalog-service && ./mvnw spring-boot:run
+
+# Terminal 2 — start user-service
+cd user-service && ./mvnw spring-boot:run
+```
+
+### Simulate failures (catalog-service)
+
+```bash
+# Make next 5 calls to /orders fail with 500
+POST http://localhost:8080/simulate/fail?times=5
+
+# Make next 3 calls slow (2s delay) — triggers timeout in user-service
+POST http://localhost:8080/simulate/slow?times=3&ms=2000
+
+# Reset all simulation counters
+POST http://localhost:8080/simulate/reset
+
+# Check current simulation state
+GET  http://localhost:8080/simulate/status
+```
+
+### Test RetryKit endpoints (user-service)
+
+```bash
+GET http://localhost:8081/user-service/orders/simple-retry     # fixed delay retry
+GET http://localhost:8081/user-service/orders/exponential      # exponential backoff
+GET http://localhost:8081/user-service/orders/retry-first      # RETRY_FIRST + CB
+GET http://localhost:8081/user-service/orders/cb-first         # CB_FIRST + CB
+GET http://localhost:8081/user-service/orders/pipeline         # Pipeline DSL
+GET http://localhost:8081/user-service/cb-status               # CB state observer
+```
+
+### RetryKit in catalog-service
+
+```bash
+# Orders enriched with pricing — RetryKit retries the pricing service (fails 2/3 times)
+GET http://localhost:8080/orders/with-pricing
+```
+
+---
+
 ## License
 
 MIT
