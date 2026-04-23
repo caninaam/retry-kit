@@ -1,5 +1,8 @@
 # RetryKit
 
+[![CI](https://github.com/caninaam/retry-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/caninaam/retry-kit/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.caninaam/retrykit)](https://central.sonatype.com/artifact/io.github.caninaam/retrykit)
+
 Lightweight Java 17 retry & circuit breaker library.  
 Zero dependencies · Fluent API · Pipeline DSL · YAML config with hot reload · JAR < 50 KB
 
