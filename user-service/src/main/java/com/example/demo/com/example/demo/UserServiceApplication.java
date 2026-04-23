@@ -76,10 +76,10 @@ public class UserServiceApplication {
 
     @PostConstruct
     void init() {
-        io.retrykit.RetryKitLogger.setEnabled(retrykitLoggingEnabled);
-        io.retrykit.RetryKitLogger.setLevel("DEBUG".equalsIgnoreCase(retrykitLoggingLevel)
-                ? io.retrykit.RetryKitLogger.LogLevel.DEBUG
-                : io.retrykit.RetryKitLogger.LogLevel.INFO);
+        io.github.caninaam.retrykit.RetryKitLogger.setEnabled(retrykitLoggingEnabled);
+        io.github.caninaam.retrykit.RetryKitLogger.setLevel("DEBUG".equalsIgnoreCase(retrykitLoggingLevel)
+                ? io.github.caninaam.retrykit.RetryKitLogger.LogLevel.DEBUG
+                : io.github.caninaam.retrykit.RetryKitLogger.LogLevel.INFO);
         pipelineKit = buildPipelineKit();
     }
 
@@ -264,8 +264,8 @@ public class UserServiceApplication {
     @GetMapping("/logging")
     public Map<String, String> loggingStatus() {
         Map<String, String> status = new LinkedHashMap<>();
-        status.put("enabled", String.valueOf(io.retrykit.RetryKitLogger.isEnabled()));
-        status.put("level",   io.retrykit.RetryKitLogger.getLevel().name());
+        status.put("enabled", String.valueOf(io.github.caninaam.retrykit.RetryKitLogger.isEnabled()));
+        status.put("level",   io.github.caninaam.retrykit.RetryKitLogger.getLevel().name());
         return status;
     }
 
@@ -273,11 +273,11 @@ public class UserServiceApplication {
     public Map<String, String> loggingUpdate(
             @RequestParam(required = false) Boolean enabled,
             @RequestParam(required = false) String level) {
-        if (enabled != null) io.retrykit.RetryKitLogger.setEnabled(enabled);
-        if (level   != null) io.retrykit.RetryKitLogger.setLevel(
+        if (enabled != null) io.github.caninaam.retrykit.RetryKitLogger.setEnabled(enabled);
+        if (level   != null) io.github.caninaam.retrykit.RetryKitLogger.setLevel(
                 "DEBUG".equalsIgnoreCase(level)
-                        ? io.retrykit.RetryKitLogger.LogLevel.DEBUG
-                        : io.retrykit.RetryKitLogger.LogLevel.INFO);
+                        ? io.github.caninaam.retrykit.RetryKitLogger.LogLevel.DEBUG
+                        : io.github.caninaam.retrykit.RetryKitLogger.LogLevel.INFO);
         return loggingStatus();
     }
 
